@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Credit Card Fraud Detector</title>
+	<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+	<main class="page">
+		<section class="shell">
+			<header class="hero">
+				<div>
+					<p class="eyebrow">ML Dashboard</p>
+					<h1>CipherShield</h1>
+					<p class="subtitle">AI-powered XGBoost model for real-time credit card fraud detection</p>
+				</div>
+				<div class="hero-badge">Live inference</div>
+			</header>
+
+			<section class="grid-layout">
+				<section class="panel">
+					<div class="panel-head">
+						<div>
+							<h2>Transaction Input</h2>
+							<p>Upload a CSV, load a sample, or enter values manually.</p>
+						</div>
+					</div>
+					<form method="post" action="/predict" class="form-stack" id="prediction-form">
+						<input type="hidden" name="Time" id="field-Time" value="0">
+						<input type="hidden" name="Amount" id="field-Amount" value="0">
+						{% for i in range(1, 29) %}
+						<input type="hidden" name="V{{ i }}" id="field-V{{ i }}" value="0">
+						{% endfor %}
+
+						<div class="toolbar">
+							<label class="upload-box">
+								<span>CSV upload</span>
+								<input type="file" id="csv-upload" accept=".csv,text/csv">
+							</label>
+							<div class="button-row">
+								<button type="button" class="secondary-btn" id="load-sample-btn">Load Sample</button>
+								<button type="button" class="ghost-btn" id="clear-btn">Clear</button>
+							</div>
+						</div>
+
+						<div class="quick-grid">
+							<label>
+								<span>Time</span>
+								<input type="number" step="any" data-field="Time" required>
+							</label>
+							<label>
+								<span>Amount</span>
+								<input type="number" step="any" data-field="Amount" required>
+							</label>
+						</div>
+
+						<details class="advanced-panel">
+							<summary>Advanced features (V1-V28)</summary>
+							<div class="feature-grid">
+								{% for i in range(1, 29) %}
+								<label>
+									<span>V{{ i }}</span>
+									<input type="number" step="any" data-field="V{{ i }}" required>
+								</label>
+								{% endfor %}
+							</div>
+						</details>
+
+						<button type="submit" class="primary-btn">Predict</button>
+					</form>
+				</section>
+
+				<section class="panel result-panel {% if not prediction %}empty{% endif %}">
+					<div class="panel-head">
+						<div>
+							<h2>Prediction Result</h2>
+							<p>Model output and confidence summary.</p>
+						</div>
+					</div>
+					{% if prediction %}
+						{% if prediction.error %}
+							<div class="result-card error-card">
+								<p>{{ prediction.error }}</p>
+							</div>
+						{% else %}
+							<div class="result-card {% if prediction.prediction == 1 %}fraud{% else %}legit{% endif %}">
+								<div class="status-row">
+									<span class="status-pill">{{ prediction.label }}</span>
+									<span class="time-chip">{{ prediction.duration_ms }} ms</span>
+								</div>
+								<div class="metric-card">
+									<div>
+										<p class="metric-label">Fraud probability</p>
+										<h3>{{ prediction.fraud_probability_pct }}%</h3>
+									</div>
+									<div class="progress-wrap">
+										<div class="progress-bar">
+											<div class="progress-fill" style="width: {{ prediction.confidence_pct }}%;"></div>
+										</div>
+										<span>Confidence {{ prediction.confidence_pct }}%</span>
+									</div>
+								</div>
+								<div class="meta-grid">
+									<div>
+										<span>Prediction time</span>
+										<strong>{{ prediction.duration_ms }} ms</strong>
+									</div>
+									<div>
+										<span>Model</span>
+										<strong>XGBoost</strong>
+									</div>
+								</div>
+							</div>
+						{% endif %}
+					{% else %}
+						<div class="empty-state">
+							<p>No prediction yet. Upload a CSV or load the sample transaction to begin.</p>
+						</div>
+					{% endif %}
+				</section>
+			</section>
+
+			<footer class="footer">Built with Flask • XGBoost • Scikit-learn</footer>
+		</section>
+	</main>
+
+	<script>
+		const sampleTransaction = {
+			Time: 0,
+			Amount: 12.50,
+			V1: 1.0,
+			V2: 0.1,
+			V3: -0.2,
+			V4: 0.3,
+			V5: 0.0,
+			V6: 0.1,
+			V7: -0.1,
+			V8: 0.0,
+			V9: 0.2,
+			V10: -0.3,
+			V11: 0.1,
+			V12: 0.0,
+			V13: 0.2,
+			V14: -0.1,
+			V15: 0.0,
+			V16: 0.1,
+			V17: -0.2,
+			V18: 0.0,
+			V19: 0.1,
+			V20: 0.0,
+			V21: -0.1,
+			V22: 0.2,
+			V23: 0.0,
+			V24: -0.1,
+			V25: 0.0,
+			V26: 0.1,
+			V27: -0.2,
+			V28: 0.0
+		};
+
+		const form = document.getElementById('prediction-form');
+		const csvUpload = document.getElementById('csv-upload');
+		const loadSampleBtn = document.getElementById('load-sample-btn');
+		const clearBtn = document.getElementById('clear-btn');
+
+		function setFieldValue(fieldName, value) {
+			const hiddenField = document.getElementById(`field-${fieldName}`);
+			const visibleField = form.querySelector(`[data-field="${fieldName}"]`);
+			if (hiddenField) hiddenField.value = value;
+			if (visibleField) visibleField.value = value;
+		}
+
+		function hydrateFields(values) {
+			Object.keys(sampleTransaction).forEach((fieldName) => {
+				if (values[fieldName] !== undefined) {
+					setFieldValue(fieldName, values[fieldName]);
+				}
+			});
+		}
+
+		function resetFields() {
+			form.reset();
+			hydrateFields({ ...sampleTransaction, Time: 0, Amount: 0, V1: 0, V2: 0, V3: 0, V4: 0, V5: 0, V6: 0, V7: 0, V8: 0, V9: 0, V10: 0, V11: 0, V12: 0, V13: 0, V14: 0, V15: 0, V16: 0, V17: 0, V18: 0, V19: 0, V20: 0, V21: 0, V22: 0, V23: 0, V24: 0, V25: 0, V26: 0, V27: 0, V28: 0 });
+			csvUpload.value = '';
+		}
+
+		async function loadCsvFile(file) {
+			const text = await file.text();
+			const [headerLine, valueLine] = text.trim().split(/\r?\n/);
+			const headers = headerLine.split(',').map((item) => item.trim());
+			const values = (valueLine || '').split(',').map((item) => item.trim());
+			const parsed = {};
+			headers.forEach((header, index) => {
+				parsed[header] = values[index];
+			});
+			hydrateFields(parsed);
+		}
+
+		loadSampleBtn.addEventListener('click', () => hydrateFields(sampleTransaction));
+		clearBtn.addEventListener('click', resetFields);
+		csvUpload.addEventListener('change', (event) => {
+			const file = event.target.files && event.target.files[0];
+			if (file) loadCsvFile(file);
+		});
+
+		hydrateFields({ ...sampleTransaction, Time: 0, Amount: 0 });
+	</script>
+</body>
+</html>
