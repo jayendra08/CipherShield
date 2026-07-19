@@ -192,6 +192,9 @@ The model is evaluated using:
 - ROC-AUC Score
 - Confusion Matrix
 
+  <img width="488" height="247" alt="Screenshot 2026-07-19 150203" src="https://github.com/user-attachments/assets/e48debad-5372-4b88-9b90-0f0e1a942417" />
+
+
 XGBoost was selected because it performs effectively on structured/tabular datasets and captures complex relationships between transaction features.
 
 ---
