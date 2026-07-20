@@ -229,3 +229,8 @@ XGBoost was selected because it performs effectively on structured/tabular datas
 # ⭐ Support
 
 If you found this project useful, consider giving it a star ⭐ on GitHub.
+
+# License 
+
+jayendra08/CipherShield is licensed under the
+MIT License
