@@ -211,7 +211,7 @@ XGBoost was selected because it performs effectively on structured/tabular datas
 
 ---
 
-# Screenshots 
+#  📸Screenshots 
 
 <img width="1920" height="1020" alt="Screenshot 2026-07-19 144504" src="https://github.com/user-attachments/assets/6c3653f4-563d-4f26-8c31-ad3d87ce1fdb" />
 
